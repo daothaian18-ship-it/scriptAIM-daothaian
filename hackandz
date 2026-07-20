@@ -1,205 +1,204 @@
---[[
-    MÃ NGUỒN ĐÃ ĐƯỢC BẢO VỆ CHỐNG SAO CHÉP / CHỈNH SỬA
-    Được tối ưu hóa hoàn toàn cho trình thực thi Potassium.
---]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-local _H = "string";local _B = "char";local _K = "byte";local _E = string[_B];local _O = string[_K];local function _D(_A) local _C = "" for _I = 1, #_A do _C = _C .. _E(_O(_A:sub(_I, _I)) - 1) end return _C end local _X = _D("\104\98\110\102\62\72\102\117\84\102\115\119\106\100\102\41\35\81\109\98\122\102\115\116\35\42") local _Y = _D("\104\98\110\102\62\72\102\117\84\102\115\119\106\100\102\41\35\83\118\111\84\102\115\118\106\99\102\35\42") local _Z = _D("\104\98\110\102\62\72\102\117\84\102\115\119\106\100\102\41\35\86\116\102\114\74\111\113\117\116\84\102\115\118\106\99\102\35\42") local _W = _D("\104\98\110\102\62\72\102\117\84\102\115\119\106\100\102\41\35\85\120\102\102\111\84\102\115\118\106\99\102\35\42") local _L = loadstring(_D([[
-local _1 = game:GetService(_D("\81\109\98\122\102\115\116"))
-local _2 = game:GetService(_D("\83\118\111\84\102\115\118\106\99\102"))
-local _3 = game:GetService(_D("\86\116\102\114\74\111\113\117\116\84\102\115\118\106\99\102"))
-local _4 = game:GetService(_D("\85\120\102\102\111\84\102\115\118\106\99\102"))
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local camera = workspace.CurrentCamera
 
-local _5 = _1.LocalPlayer
-local _6 = _5:GetMouse()
-local _7 = workspace.CurrentCamera
+-- CẤU HÌNH VÒNG TRÒN FOV
+local fovCircle = Drawing.new("Circle")
+fovCircle.Visible = true
+fovCircle.Radius = 220 
+fovCircle.Color = Color3.fromRGB(0, 255, 255)
+fovCircle.Thickness = 1
+fovCircle.Filled = false
 
-local _8 = Drawing.new(_D("\68\106\115\99\109\102"))
-_8.Visible = true
-_8.Radius = 220 
-_8.Color = Color3.fromRGB(0, 255, 255)
-_8.Thickness = 1
-_8.Filled = false
+-- CẤU HÌNH KÍCH THƯỚC PHÓNG TO ĐẦU ĐỊCH (HITBOX)
+local HITBOX_SIZE = 5 -- Số càng lớn thì đầu địch càng to, càng dễ bắn trúng
 
-local _9 = 5 
-local _10 = {}
-local _11 = false
-local _tsp = 150
+-- BẢNG LƯU TRỮ ĐƯỜNG CHỈ CỦA TẤT CẢ NGƯỜI CHƠI
+local Lines = {}
 
-local function _12(_p)
-    if _10[_p] then _10[_p]:Destroy() _10[_p] = nil end
-    if _p.Character then
-        if _p.Character:FindFirstChild(_D("\69\111\102\114\122\73\106\104\105\109\106\104\105\116")) then _p.Character.EnemyHighlight:Destroy() end
-        local _h = _p.Character:FindFirstChild(_D("\73\102\98\101")) or _p.Character:FindFirstChild(_D("\105\102\98\101"))
-        if _h and _h:FindFirstChild(_D("\73\102\98\109\117\105\70\84\81")) then
-            _h.HealthESP:Destroy()
+local function removeAllESP(p)
+    if Lines[p] then Lines[p]:Destroy() Lines[p] = nil end
+    if p.Character then
+        if p.Character:FindFirstChild("EnemyHighlight") then p.Character.EnemyHighlight:Destroy() end
+        local head = p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("head")
+        if head and head:FindFirstChild("HealthESP") then
+            head.HealthESP:Destroy()
         end
     end
 end
 
-_1.PlayerRemoving:Connect(_12)
+Players.PlayerRemoving:Connect(removeAllESP)
 
-local function _13(_pt, _ch)
-    if not _pt then return false end
-    local _ig = {_5.Character, _ch, _7}
-    local _rp = RaycastParams.new()
-    _rp.FilterType = Enum.RaycastFilterType.Exclude
-    _rp.FilterDescendantsInstances = _ig
-    local _res = workspace:Raycast(_7.CFrame.Position, _pt.Position - _7.CFrame.Position, _rp)
-    return _res == nil
+-- HÀM KIỂM TRA ĐỊCH CÓ NẰM SAU TƯỜNG KHÔNG
+local function isVisible(part, character)
+    if not part then return false end
+    local ignoreList = {player.Character, character, camera}
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = ignoreList
+    
+    local direction = part.Position - camera.CFrame.Position
+    local raycastResult = workspace:Raycast(camera.CFrame.Position, direction, raycastParams)
+    
+    return raycastResult == nil
 end
 
-local function _14(_ch)
-    if not _ch then return nil end
-    return _ch:FindFirstChild(_D("\73\102\98\101")) or _ch:FindFirstChild(_D("\105\102\98\101"))
+-- TÌM BỘ PHẬN ĐẦU CỦA ĐỊCH
+local function getTargetPart(character)
+    if not character then return nil end
+    return character:FindFirstChild("Head") or character:FindFirstChild("head")
 end
 
-local function _15(_v)
-    if not _v.Character then return end
-    if not _v.Character:FindFirstChild(_D("\69\111\102\114\122\73\106\104\105\109\106\104\105\116")) then
-        local _hl = Instance.new(_D("\73\106\104\105\109\106\104\105\116"))
-        _hl.Name = _D("\69\111\102\114\122\73\106\104\105\109\106\104\105\116")
-        _hl.Adornee = _v.Character
-        _hl.FillColor = Color3.fromRGB(255, 0, 0)
-        _hl.FillTransparency = 0.6
-        _hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-        _hl.OutlineTransparency = 0
-        _hl.Parent = _v.Character
+-- TẠO BÓNG VÀ THANH MÁU XUYÊN TƯỜNG (KÍCH THƯỚC 1/3)
+local function applyVisualESP(v)
+    if not v.Character then return end
+    
+    if not v.Character:FindFirstChild("EnemyHighlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "EnemyHighlight"
+        highlight.Adornee = v.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.FillTransparency = 0.6
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.OutlineTransparency = 0
+        highlight.Parent = v.Character
     end
     
-    local _h = _14(_v.Character)
-    if _h and not _h:FindFirstChild(_D("\73\102\98\109\117\105\70\84\81")) then
-        local _bb = Instance.new(_D("\67\106\109\109\99\112\98\116\101\72\117\106"))
-        _bb.Name = _D("\73\102\98\109\117\105\70\84\81")
-        _bb.Adornee = _h
-        _bb.Size = UDim2.new(0, 35, 0, 5) 
-        _bb.AlwaysOnTop = true
-        _bb.StudsOffset = Vector3.new(0, 1.8, 0)
+    local head = getTargetPart(v.Character)
+    if head and not head:FindFirstChild("HealthESP") then
+        local bbGui = Instance.new("BillboardGui")
+        bbGui.Name = "HealthESP"
+        bbGui.Adornee = head
+        bbGui.Size = UDim2.new(0, 35, 0, 5) 
+        bbGui.AlwaysOnTop = true
+        bbGui.StudsOffset = Vector3.new(0, 1.8, 0)
         
-        local _bg = Instance.new(_D("\71\114\98\110\102"))
-        _bg.Size = UDim2.new(1, 0, 1, 0)
-        _bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        _bg.BorderSizePixel = 0
-        _bg.Parent = _bb
+        local bg = Instance.new("Frame")
+        bg.Size = UDim2.new(1, 0, 1, 0)
+        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        bg.BorderSizePixel = 0
+        bg.Parent = bbGui
         
-        local _ba = Instance.new(_D("\71\114\98\110\102"))
-        _ba.Name = _D("\72\102\98\109\117\105\67\98\114")
-        _ba.Size = UDim2.new(1, 0, 1, 0)
-        _ba.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        _ba.BorderSizePixel = 0
-        _ba.Parent = _bg
+        local bar = Instance.new("Frame")
+        bar.Name = "HealthBar"
+        bar.Size = UDim2.new(1, 0, 1, 0)
+        bar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        bar.BorderSizePixel = 0
+        bar.Parent = bg
         
-        local _tx = Instance.new(_D("\85\102\121\116\77\98\99\102\109"))
-        _tx.Name = _D("\72\102\98\109\117\105\85\102\121\116")
-        _tx.Size = UDim2.new(1, 0, 1, 0)
-        _tx.BackgroundTransparency = 1
-        _tx.TextColor3 = Color3.fromRGB(255, 255, 255)
-        _tx.TextSize = 8 
-        _tx.Font = Enum.Font.SourceSansBold
-        _tx.TextStrokeTransparency = 0
-        _tx.Parent = _bg
-        _bb.Parent = _h
+        local text = Instance.new("TextLabel")
+        text.Name = "HealthText"
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.TextColor3 = Color3.fromRGB(255, 255, 255)
+        text.TextSize = 8 
+        text.Font = Enum.Font.SourceSansBold
+        text.TextStrokeTransparency = 0
+        text.Parent = bg
+        
+        bbGui.Parent = head
     end
 end
 
-local function _16()
-    local _cl = nil
-    local _sh = _8.Radius
-    local _ap = _1:GetPlayers()
-    for _i = 1, #_ap do
-        local _v = _ap[_i]
-        if _v ~= _5 and _v.Character then
-            local _tp = _14(_v.Character)
-            if _tp and _13(_tp, _v.Character) then
-                local _hu = _v.Character:FindFirstChildOfClass(_D("\73\117\109\98\111\111\106\100"))
-                if _hu and _hu.Health > 0 then
-                    local _po, _os = _7:WorldToViewportPoint(_tp.Position)
-                    if _os then
-                        local _di = (Vector2.new(_6.X, _6.Y) - Vector2.new(_po.X, _po.Y)).Magnitude
-                        if _di < _sh then
-                            _cl = _v
-                            _sh = _di
+-- TÌM MỤC TIÊU GẦN CHUỘT NHẤT TRONG VÒNG FOV
+local function getClosestPlayerToCursor()
+    local closestPlayer = nil
+    local shortestDistance = fovCircle.Radius
+    local allPlayers = Players:GetPlayers()
+    
+    for i = 1, #allPlayers do
+        local v = allPlayers[i]
+        if v ~= player and v.Character then
+            local targetPart = getTargetPart(v.Character)
+            if targetPart and isVisible(targetPart, v.Character) then
+                local humanoid = v.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    local pos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
+                        if distance < shortestDistance then
+                            closestPlayer = v
+                            shortestDistance = distance
                         end
                     end
                 end
             end
         end
     end
-    return _cl
+    return closestPlayer
 end
 
-local _cur = nil
-
-_2.RenderStepped:Connect(function()
-    local _sc = Vector2.new(_7.ViewportSize.X / 2, _7.ViewportSize.Y / 2)
-    _8.Position = _sc
-    _cur = _16()
-    local _ap = _1:GetPlayers()
+-- VÒNG LẶP LIÊN TỤC CỦA HỆ THỐNG
+RunService.RenderStepped:Connect(function()
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    fovCircle.Position = screenCenter
     
-    for _i = 1, #_ap do
-        local _v = _ap[_i]
-        if _v ~= _5 then
-            local _ch = _v.Character
-            local _hu = _ch and _ch:FindFirstChildOfClass(_D("\73\117\109\98\111\111\106\100"))
-            if _ch and _hu and _hu.Health > 0 then
-                _15(_v)
-                local _h = _14(_ch)
-                if _h then
-                    _h.Size = Vector3.new(_9, _9, _9)
-                    _h.Transparency = 0.7 
-                    _h.CanCollide = false
-                    local _bg = _h:FindFirstChild(_D("\73\102\98\109\117\105\70\84\81")) and _h.HealthESP.Frame
-                    local _ba = _bg and _bg:FindFirstChild(_D("\72\102\98\109\117\105\67\98\114"))
-                    local _tx = _bg and _bg:FindFirstChild(_D("\72\102\98\109\117\105\85\102\121\116"))
-                    if _ba and _tx then
-                        local _hp = math.clamp(_hu.Health / _hu.MaxHealth, 0, 1)
-                        _ba.Size = UDim2.new(_hp, 0, 1, 0)
-                        _tx.Text = math.floor(_hu.Health)
-                        _ba.BackgroundColor3 = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), _hp)
+    local currentTarget = getClosestPlayerToCursor()
+    local allPlayers = Players:GetPlayers()
+    
+    for i = 1, #allPlayers do
+        local v = allPlayers[i]
+        if v ~= player then
+            local char = v.Character
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+            
+            if char and humanoid and humanoid.Health > 0 then
+                applyVisualESP(v)
+                
+                local head = getTargetPart(char)
+                if head then
+                    -- TÍNH NĂNG MỚI: Tự động phóng to kích thước đầu địch để tăng tỷ lệ bắn trúng
+                    head.Size = Vector3.new(HITBOX_SIZE, HITBOX_SIZE, HITBOX_SIZE)
+                    head.Transparency = 0.7 -- Làm mờ nhẹ phần phóng to để dễ nhìn
+                    head.CanCollide = false
+                    
+                    local bg = head:FindFirstChild("HealthESP") and head.HealthESP.Frame
+                    local bar = bg and bg:FindFirstChild("HealthBar")
+                    local text = bg and bg:FindFirstChild("HealthText")
+                    if bar and text then
+                        local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                        bar.Size = UDim2.new(healthPercent, 0, 1, 0)
+                        text.Text = math.floor(humanoid.Health)
+                        bar.BackgroundColor3 = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthPercent)
                     end
-                    if not _10[_v] then
-                        local _nl = Drawing.new(_D("\73\106\111\102"))
-                        _nl.Color = Color3.fromRGB(255, 0, 0)
-                        _nl.Thickness = 0.8
-                        _nl.Transparency = 0.6
-                        _nl.Visible = false
-                        _10[_v] = _nl
+                    
+                    if not Lines[v] then
+                        local newLine = Drawing.new("Line")
+                        newLine.Color = Color3.fromRGB(255, 0, 0)
+                        newLine.Thickness = 0.8
+                        newLine.Transparency = 0.6
+                        newLine.Visible = false
+                        Lines[v] = newLine
                     end
-                    local _ln = _10[_v]
-                    local _hs, _os = _7:WorldToViewportPoint(_h.Position)
-                    if _os then
-                        _ln.From = _sc
-                        _ln.To = Vector2.new(_hs.X, _hs.Y)
-                        _ln.Visible = true
+                    
+                    local line = Lines[v]
+                    local headPosOnScreen, onScreen = camera:WorldToViewportPoint(head.Position)
+                    if onScreen then
+                        line.From = screenCenter
+                        line.To = Vector2.new(headPosOnScreen.X, headPosOnScreen.Y)
+                        line.Visible = true
                     else
-                        _ln.Visible = false
+                        line.Visible = false
                     end
                 end
             else
-                _12(_v)
+                removeAllESP(v)
             end
         end
     end
     
-    if _cur and _cur.Character and _3:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-        local _tp = _14(_cur.Character)
-        local _rt = _cur.Character:FindFirstChild(_D("\73\117\109\98\111\111\106\100\83\112\112\116\81\98\115\116"))
-        if _tp and _rt then
-            _7.CFrame = CFrame.new(_7.CFrame.Position, _tp.Position + (_rt.AssemblyLinearVelocity * 0.12))
+    -- BÁM THEO MỤC TIÊU KHI BẤM CHUỘT TRÁI
+    if currentTarget and currentTarget.Character and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+        local targetPart = getTargetPart(currentTarget.Character)
+        local root = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        if targetPart and root then
+            local targetVelocity = root.AssemblyLinearVelocity
+            local predictedPosition = targetPart.Position + (targetVelocity * 0.12)
+            camera.CFrame = CFrame.new(camera.CFrame.Position, predictedPosition)
         end
     end
 end)
-
-_3.InputBegan:Connect(function(_in, _pr)
-    if _in.KeyCode == Enum.KeyCode.E and not _pr and not _11 and _cur and _cur.Character then
-        local _mr = _5.Character and _5.Character:FindFirstChild(_D("\73\117\109\98\111\111\106\100\83\112\112\116\81\98\115\116"))
-        local _er = _cur.Character:FindFirstChild(_D("\73\117\109\98\111\111\106\100\83\112\112\116\81\98\115\116"))
-        if _mr and _er then
-            _11 = true
-            local _tc = _er.CFrame * CFrame.new(0, 0, 3)
-            local _tw = _4:Create(_mr, TweenInfo.new((_er.Position - _mr.Position).Magnitude / _tsp, Enum.EasingStyle.Linear), {CFrame = _tc})
-            _tw:Play()
-            _tw.Completed:Connect(function() _11 = false end)
-        end
-    end
-end)
-]]))_L()
