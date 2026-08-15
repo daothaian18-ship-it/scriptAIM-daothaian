@@ -680,7 +680,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local LOGO_ID =
-    "rbxassetid://97528657105942"
+    "rbxassetid://122915846457922"
 
 local DISPLAY_ZINDEX = 9999
 
@@ -737,7 +737,7 @@ IntroTitle.Size =
     UDim2.fromOffset(400, 40)
 
 IntroTitle.BackgroundTransparency = 1
-IntroTitle.Text = "DTA Hub"
+IntroTitle.Text = "DTA HUD"
 
 IntroTitle.TextColor3 =
     Color3.fromRGB(0, 255, 255)
