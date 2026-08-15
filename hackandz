@@ -1,236 +1,1962 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui") 
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
-local camera = workspace.CurrentCamera
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local GuiService = game:GetService("GuiService")
+local Stats = game:GetService("Stats")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
-local MY_IMAGE_ID = "97528657105942" 
-local AVATAR_SIZE = 55 -- Kích thước ảnh thu nhỏ
-local AVATAR_Y_POSITION = 0.10 -- Độ cao đẩy lên trên
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
-local fovCircle = Drawing.new("Circle")
-fovCircle.Visible = true
-fovCircle.Radius = 220
-fovCircle.Color = Color3.fromRGB(0, 255, 255)
-fovCircle.Thickness = 1
-fovCircle.Filled = false
+local TargetGui = (gethui and gethui()) or CoreGui or PlayerGui
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AvatarScreenGui"
-screenGui.ResetOnSpawn = false 
+local CORRECT_KEY = "DTA-ABC-XYZ-ANN"
 
-local success, err = pcall(function()
-    screenGui.Parent = CoreGui
+local GET_KEY_LINK =
+    "https://raw.githubusercontent.com/daothaian18-ship-it/DTA-KEY/refs/heads/main/AN"
+
+local KeyAccepted = false
+
+local KeyGui = Instance.new("ScreenGui")
+KeyGui.Name = "DTA_KeySystem"
+KeyGui.ResetOnSpawn = false
+KeyGui.IgnoreGuiInset = true
+
+pcall(function()
+    KeyGui.Parent = CoreGui
 end)
-if not success then
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+if not KeyGui.Parent then
+    KeyGui.Parent = PlayerGui
 end
 
-local avatarImage = Instance.new("ImageLabel")
-avatarImage.Name = "AvatarImage"
-avatarImage.Size = UDim2.new(0, AVATAR_SIZE, 0, AVATAR_SIZE)
-avatarImage.Image = "rbxthumb://type=Asset&id=" .. MY_IMAGE_ID .. "&w=150&h=150"
-avatarImage.BackgroundTransparency = 1 
-avatarImage.AnchorPoint = Vector2.new(0.5, 0.5) 
-avatarImage.Visible = true
-avatarImage.Parent = screenGui
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 330, 0, 220)
+Main.Position = UDim2.new(0.5, -165, 0.5, -110)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Main.BorderSizePixel = 0
+Main.Parent = KeyGui
 
-local HITBOX_SIZE = 5 
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Main
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(0, 170, 255)
+Stroke.Thickness = 1.5
+Stroke.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "DTA HUD"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 22
+Title.Font = Enum.Font.SourceSansBold
+Title.Parent = Main
+
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Size = UDim2.new(1, -20, 0, 25)
+SubTitle.Position = UDim2.new(0, 10, 0, 42)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Nhập Key để sử dụng Script"
+SubTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+SubTitle.TextSize = 14
+SubTitle.Font = Enum.Font.SourceSans
+SubTitle.Parent = Main
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Size = UDim2.new(1, -40, 0, 38)
+KeyBox.Position = UDim2.new(0, 20, 0, 75)
+KeyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+KeyBox.BorderSizePixel = 0
+KeyBox.PlaceholderText = "Nhập Key..."
+KeyBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.TextSize = 15
+KeyBox.Font = Enum.Font.SourceSans
+KeyBox.ClearTextOnFocus = false
+KeyBox.Parent = Main
+
+local KeyCorner = Instance.new("UICorner")
+KeyCorner.CornerRadius = UDim.new(0, 7)
+KeyCorner.Parent = KeyBox
+
+local CheckButton = Instance.new("TextButton")
+CheckButton.Size = UDim2.new(0.45, -5, 0, 35)
+CheckButton.Position = UDim2.new(0.05, 0, 0, 125)
+CheckButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+CheckButton.BorderSizePixel = 0
+CheckButton.Text = "XÁC NHẬN"
+CheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheckButton.TextSize = 14
+CheckButton.Font = Enum.Font.SourceSansBold
+CheckButton.Parent = Main
+
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 7)
+CheckCorner.Parent = CheckButton
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0.45, -5, 0, 35)
+CloseButton.Position = UDim2.new(0.5, 5, 0, 125)
+CloseButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "ĐÓNG"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 14
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.Parent = Main
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 7)
+CloseCorner.Parent = CloseButton
+
+local GetKeyButton = Instance.new("TextButton")
+GetKeyButton.Size = UDim2.new(0.9, 0, 0, 30)
+GetKeyButton.Position = UDim2.new(0.05, 0, 0, 165)
+GetKeyButton.BackgroundTransparency = 1
+GetKeyButton.BorderSizePixel = 0
+GetKeyButton.Text = "Get key"
+GetKeyButton.TextColor3 = Color3.fromRGB(0, 170, 255)
+GetKeyButton.TextSize = 14
+GetKeyButton.Font = Enum.Font.SourceSansBold
+GetKeyButton.Parent = Main
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -20, 0, 20)
+Status.Position = UDim2.new(0, 10, 1, -25)
+Status.BackgroundTransparency = 1
+Status.Text = ""
+Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+Status.TextSize = 13
+Status.Font = Enum.Font.SourceSans
+Status.Parent = Main
+
+GetKeyButton.MouseButton1Click:Connect(function()
+
+    local copied = false
+
+    if setclipboard then
+        copied = pcall(function()
+            setclipboard(GET_KEY_LINK)
+        end)
+
+    elseif toclipboard then
+        copied = pcall(function()
+            toclipboard(GET_KEY_LINK)
+        end)
+    end
+
+    if copied then
+        Status.Text = "Đã copy link Get Key!"
+        Status.TextColor3 = Color3.fromRGB(0, 255, 120)
+    else
+        Status.Text = "Executor không hỗ trợ copy!"
+        Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+    end
+end)
+
+local function CheckKey()
+
+    if KeyBox.Text == CORRECT_KEY then
+
+        KeyAccepted = true
+
+        Status.Text = "Key đúng! Đang khởi chạy..."
+        Status.TextColor3 = Color3.fromRGB(0, 255, 120)
+
+        task.wait(0.5)
+
+        if KeyGui then
+            KeyGui:Destroy()
+        end
+
+    else
+
+        Status.Text = "Key không đúng!"
+        Status.TextColor3 = Color3.fromRGB(255, 70, 70)
+
+        KeyBox.Text = ""
+    end
+end
+
+CheckButton.MouseButton1Click:Connect(CheckKey)
+
+KeyBox.FocusLost:Connect(function(enterPressed)
+
+    if enterPressed then
+        CheckKey()
+    end
+
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+
+    KeyAccepted = false
+
+    if KeyGui then
+        KeyGui:Destroy()
+    end
+
+end)
+
+while not KeyAccepted do
+
+    if not KeyGui.Parent then
+        return
+    end
+
+    task.wait()
+
+end
+
+local FOVCircle = Drawing.new("Circle")
+
+FOVCircle.Visible = true
+FOVCircle.Radius = 220
+FOVCircle.Color = Color3.fromRGB(0, 255, 255)
+FOVCircle.Thickness = 1
+FOVCircle.Filled = false
+
+local HITBOX_SIZE = 5
 
 local Lines = {}
 
-local function removeAllESP(p)
-    if Lines[p] then
-        Lines[p].Visible = false 
-        Lines[p]:Destroy()
-        Lines[p] = nil
+local function IsTeamMate(plr)
+
+    if not LocalPlayer.Team or not plr.Team then
+        return false
     end
-    if p.Character then
-        if p.Character:FindFirstChild("EnemyHighlight") then
-            p.Character.EnemyHighlight:Destroy()
+
+    return LocalPlayer.Team == plr.Team
+end
+
+local function GetTargetPart(character)
+
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("Head")
+        or character:FindFirstChild("head")
+end
+
+local function IsVisible(part, character)
+
+    if not part then
+        return false
+    end
+
+    local Params = RaycastParams.new()
+
+    Params.FilterType = Enum.RaycastFilterType.Exclude
+
+    Params.FilterDescendantsInstances = {
+        LocalPlayer.Character,
+        character
+    }
+
+    local Direction =
+        part.Position - Camera.CFrame.Position
+
+    local Result =
+        workspace:Raycast(
+            Camera.CFrame.Position,
+            Direction,
+            Params
+        )
+
+    return Result == nil
+end
+
+local function RemoveESP(plr)
+
+    if Lines[plr] then
+
+        pcall(function()
+            Lines[plr].Visible = false
+            Lines[plr]:Remove()
+        end)
+
+        Lines[plr] = nil
+    end
+
+    if plr.Character then
+
+        local char = plr.Character
+
+        local highlight =
+            char:FindFirstChild("DTA_ESP")
+
+        if highlight then
+            highlight:Destroy()
         end
-        local head = p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("head")
+
+        local head =
+            GetTargetPart(char)
+
         if head then
-            if head:FindFirstChild("HealthESP") then
-                head.HealthESP:Destroy()
+
+            local healthESP =
+                head:FindFirstChild("HealthESP")
+
+            if healthESP then
+                healthESP:Destroy()
             end
+
             if head:IsA("BasePart") then
-                head.Size = Vector3.new(2, 1, 1) 
+
+                head.Size =
+                    Vector3.new(2, 1, 1)
+
                 head.Transparency = 0
+
             end
         end
     end
 end
 
-Players.PlayerRemoving:Connect(removeAllESP)
+Players.PlayerRemoving:Connect(RemoveESP)
 
-local function isTeamMate(v)
-    if not player.Team or not v.Team then return false end
-    return player.Team == v.Team
-end
+local function ApplyHealthESP(plr)
 
-local function isVisible(part, character)
-    if not part then return false end
-    local ignoreList = {player.Character, character, camera}
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = ignoreList
-    
-    local direction = part.Position - camera.CFrame.Position
-    local raycastResult = workspace:Raycast(camera.CFrame.Position, direction, raycastParams)
-    return raycastResult == nil
-end
-
-local function getTargetPart(character)
-    if not character then return nil end
-    return character:FindFirstChild("Head") or character:FindFirstChild("head")
-end
-
-local function applyVisualESP(v)
-    if not v.Character then return end
-
-    local head = getTargetPart(v.Character)
-    if head and not head:FindFirstChild("HealthESP") then
-        local bbGui = Instance.new("BillboardGui")
-        bbGui.Name = "HealthESP"
-        bbGui.Adornee = head
-        bbGui.Size = UDim2.new(0, 35, 0, 5)
-        bbGui.AlwaysOnTop = true
-        bbGui.StudsOffset = Vector3.new(0, 1.8, 0)
-
-        local bg = Instance.new("Frame")
-        bg.Size = UDim2.new(1, 0, 1, 0)
-        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        bg.BorderSizePixel = 0
-        bg.Parent = bbGui
-
-        local bar = Instance.new("Frame")
-        bar.Name = "HealthBar"
-        bar.Size = UDim2.new(1, 0, 1, 0)
-        bar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        bar.BorderSizePixel = 0
-        bar.Parent = bg
-
-        local text = Instance.new("TextLabel")
-        text.Name = "HealthText"
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.TextColor3 = Color3.fromRGB(255, 255, 255)
-        text.TextSize = 8
-        text.Font = Enum.Font.SourceSansBold
-        text.TextStrokeTransparency = 0
-        text.Parent = bg
-
-        bbGui.Parent = head
+    if not plr.Character then
+        return
     end
+
+    local head =
+        GetTargetPart(plr.Character)
+
+    if not head then
+        return
+    end
+
+    if head:FindFirstChild("HealthESP") then
+        return
+    end
+
+    local Billboard =
+        Instance.new("BillboardGui")
+
+    Billboard.Name = "HealthESP"
+    Billboard.Adornee = head
+    Billboard.Size = UDim2.new(0, 35, 0, 5)
+    Billboard.AlwaysOnTop = true
+    Billboard.StudsOffset =
+        Vector3.new(0, 1.8, 0)
+
+    local Background =
+        Instance.new("Frame")
+
+    Background.Name = "Frame"
+    Background.Size =
+        UDim2.fromScale(1, 1)
+
+    Background.BackgroundColor3 =
+        Color3.fromRGB(0, 0, 0)
+
+    Background.BorderSizePixel = 0
+    Background.Parent = Billboard
+
+    local HealthBar =
+        Instance.new("Frame")
+
+    HealthBar.Name = "HealthBar"
+
+    HealthBar.Size =
+        UDim2.fromScale(1, 1)
+
+    HealthBar.BackgroundColor3 =
+        Color3.fromRGB(0, 255, 0)
+
+    HealthBar.BorderSizePixel = 0
+    HealthBar.Parent = Background
+
+    local HealthText =
+        Instance.new("TextLabel")
+
+    HealthText.Name = "HealthText"
+
+    HealthText.Size =
+        UDim2.fromScale(1, 1)
+
+    HealthText.BackgroundTransparency = 1
+    HealthText.TextColor3 =
+        Color3.fromRGB(255, 255, 255)
+
+    HealthText.TextSize = 8
+    HealthText.Font =
+        Enum.Font.SourceSansBold
+
+    HealthText.TextStrokeTransparency = 0
+    HealthText.Parent = Background
+
+    Billboard.Parent = head
 end
 
-local function getClosestPlayerToCursor()
-    local closestPlayer = nil
-    local shortestDistance = fovCircle.Radius
-    local allPlayers = Players:GetPlayers()
+local function GetClosestPlayer()
 
-    for i = 1, #allPlayers do
-        local v = allPlayers[i]
-        if v ~= player and not isTeamMate(v) and v.Character then
-            local targetPart = getTargetPart(v.Character)
-            if targetPart and isVisible(targetPart, v.Character) then
-                local humanoid = v.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                    local pos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-                    if onScreen then
-                        local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
-                        if distance < shortestDistance then
-                            closestPlayer = v
-                            shortestDistance = distance
-                        end
+    local Closest = nil
+
+    local ShortestDistance =
+        FOVCircle.Radius
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+
+        if plr ~= LocalPlayer
+            and not IsTeamMate(plr)
+            and plr.Character then
+
+            local Head =
+                GetTargetPart(plr.Character)
+
+            local Humanoid =
+                plr.Character:FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if Head
+                and Humanoid
+                and Humanoid.Health > 0
+                and IsVisible(Head, plr.Character) then
+
+                local Position, OnScreen =
+                    Camera:WorldToViewportPoint(
+                        Head.Position
+                    )
+
+                if OnScreen then
+
+                    local Distance =
+                        (
+                            Vector2.new(
+                                Mouse.X,
+                                Mouse.Y
+                            )
+                            -
+                            Vector2.new(
+                                Position.X,
+                                Position.Y
+                            )
+                        ).Magnitude
+
+                    if Distance < ShortestDistance then
+
+                        Closest = plr
+                        ShortestDistance = Distance
+
                     end
                 end
             end
         end
     end
-    return closestPlayer
+
+    return Closest
 end
 
 RunService.RenderStepped:Connect(function()
-    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-    fovCircle.Position = screenCenter
 
-    avatarImage.Position = UDim2.new(0.5, 0, AVATAR_Y_POSITION, 0)
-    avatarImage.Size = UDim2.new(0, AVATAR_SIZE, 0, AVATAR_SIZE)
+    Camera = workspace.CurrentCamera
 
-    local currentTarget = getClosestPlayerToCursor()
-    local allPlayers = Players:GetPlayers()
+    local ScreenCenter =
+        Vector2.new(
+            Camera.ViewportSize.X / 2,
+            Camera.ViewportSize.Y / 2
+        )
 
-    for i = 1, #allPlayers do
-        local v = allPlayers[i]
-        if v ~= player then
-            
-            if isTeamMate(v) then
-                removeAllESP(v)
+    FOVCircle.Position =
+        ScreenCenter
+
+    local CurrentTarget =
+        GetClosestPlayer()
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+
+        if plr ~= LocalPlayer then
+
+            if IsTeamMate(plr) then
+
+                RemoveESP(plr)
+
                 continue
             end
 
-            local char = v.Character
-            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-            
-            if char and humanoid and humanoid.Health > 0 then
-                applyVisualESP(v)
-                local head = getTargetPart(char)
-                
-                if head then
-                    
-                    head.Size = Vector3.new(HITBOX_SIZE, HITBOX_SIZE, HITBOX_SIZE)
-                    head.Transparency = 0.7
-                    head.CanCollide = false
+            local Character =
+                plr.Character
 
-                    local healthESP = head:FindFirstChild("HealthESP")
-                    local bg = healthESP and healthESP:FindFirstChild("Frame")
-                    local bar = bg and bg:FindFirstChild("HealthBar")
-                    local text = bg and bg:FindFirstChild("HealthText")
-                    
-                    if bar and text then
-                        local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                        bar.Size = UDim2.new(healthPercent, 0, 1, 0)
-                        text.Text = math.floor(humanoid.Health)
-                        bar.BackgroundColor3 = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthPercent)
+            local Humanoid =
+                Character
+                and Character:FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if Character
+                and Humanoid
+                and Humanoid.Health > 0 then
+
+                ApplyHealthESP(plr)
+
+                local Head =
+                    GetTargetPart(Character)
+
+                if Head then
+
+                    Head.Size =
+                        Vector3.new(
+                            HITBOX_SIZE,
+                            HITBOX_SIZE,
+                            HITBOX_SIZE
+                        )
+
+                    Head.Transparency = 0.7
+                    Head.CanCollide = false
+
+
+                    local HealthESP =
+                        Head:FindFirstChild(
+                            "HealthESP"
+                        )
+
+                    local Background =
+                        HealthESP
+                        and HealthESP:FindFirstChild(
+                            "Frame"
+                        )
+
+                    local Bar =
+                        Background
+                        and Background:FindFirstChild(
+                            "HealthBar"
+                        )
+
+                    local Text =
+                        Background
+                        and Background:FindFirstChild(
+                            "HealthText"
+                        )
+
+                    if Bar and Text then
+
+                        local MaxHealth =
+                            math.max(
+                                Humanoid.MaxHealth,
+                                1
+                            )
+
+                        local Percent =
+                            math.clamp(
+                                Humanoid.Health
+                                /
+                                MaxHealth,
+                                0,
+                                1
+                            )
+
+                        Bar.Size =
+                            UDim2.new(
+                                Percent,
+                                0,
+                                1,
+                                0
+                            )
+
+                        Text.Text =
+                            tostring(
+                                math.floor(
+                                    Humanoid.Health
+                                )
+                            )
+
+                        Bar.BackgroundColor3 =
+                            Color3.fromRGB(
+                                255,
+                                0,
+                                0
+                            ):Lerp(
+                                Color3.fromRGB(
+                                    0,
+                                    255,
+                                    0
+                                ),
+                                Percent
+                            )
                     end
 
-                    if not Lines[v] then
-                        local newLine = Drawing.new("Line")
-                        newLine.Color = Color3.fromRGB(255, 0, 0)
-                        newLine.Thickness = 1.2
-                        newLine.Transparency = 0.8
-                        newLine.Visible = false
-                        Lines[v] = newLine
+
+                    if not Lines[plr] then
+
+                        local Line =
+                            Drawing.new("Line")
+
+                        Line.Color =
+                            Color3.fromRGB(
+                                255,
+                                0,
+                                0
+                            )
+
+                        Line.Thickness = 1.2
+                        Line.Transparency = 0.8
+                        Line.Visible = false
+
+                        Lines[plr] = Line
                     end
 
-                    local line = Lines[v]
-                    local headPosOnScreen, onScreen = camera:WorldToViewportPoint(head.Position)
+                    local Line =
+                        Lines[plr]
 
-                    if onScreen then
-                        line.From = screenCenter
-                        line.To = Vector2.new(headPosOnScreen.X, headPosOnScreen.Y)
-                        line.Visible = true
+                    local Position, OnScreen =
+                        Camera:WorldToViewportPoint(
+                            Head.Position
+                        )
+
+                    if OnScreen then
+
+                        Line.From =
+                            ScreenCenter
+
+                        Line.To =
+                            Vector2.new(
+                                Position.X,
+                                Position.Y
+                            )
+
+                        Line.Visible = true
+
                     else
-                        line.Visible = false
+
+                        Line.Visible = false
+
                     end
                 end
+
             else
-                removeAllESP(v)
+
+                RemoveESP(plr)
+
             end
         end
     end
 
-    local isLeftMouseDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-    local isRightMouseDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
 
-    if currentTarget and currentTarget.Character and (isLeftMouseDown or isRightMouseDown) then
-        local targetPart = getTargetPart(currentTarget.Character)
-        if targetPart then
-            camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
+    local Left =
+        UserInputService:IsMouseButtonPressed(
+            Enum.UserInputType.MouseButton1
+        )
+
+    local Right =
+        UserInputService:IsMouseButtonPressed(
+            Enum.UserInputType.MouseButton2
+        )
+
+    if CurrentTarget
+        and CurrentTarget.Character
+        and (Left or Right) then
+
+        local TargetPart =
+            GetTargetPart(
+                CurrentTarget.Character
+            )
+
+        if TargetPart then
+
+            Camera.CFrame =
+                CFrame.new(
+                    Camera.CFrame.Position,
+                    TargetPart.Position
+                )
+
         end
     end
 end)
+
+local LOGO_ID =
+    "rbxassetid://97528657105942"
+
+local DISPLAY_ZINDEX = 9999
+
+local IntroGui =
+    Instance.new("ScreenGui")
+
+IntroGui.Name = "DTA_Intro"
+IntroGui.IgnoreGuiInset = true
+IntroGui.ResetOnSpawn = false
+IntroGui.DisplayOrder =
+    DISPLAY_ZINDEX + 1
+IntroGui.Parent = TargetGui
+
+local BG =
+    Instance.new("Frame")
+
+BG.Size =
+    UDim2.fromScale(1, 1)
+
+BG.BackgroundColor3 =
+    Color3.fromRGB(10, 10, 10)
+
+BG.BackgroundTransparency = 0.2
+BG.BorderSizePixel = 0
+BG.Parent = IntroGui
+
+local Logo =
+    Instance.new("ImageLabel")
+
+Logo.AnchorPoint =
+    Vector2.new(0.5, 0.5)
+
+Logo.Position =
+    UDim2.fromScale(0.5, 0.45)
+
+Logo.Size =
+    UDim2.fromOffset(0, 0)
+
+Logo.BackgroundTransparency = 1
+Logo.Image = LOGO_ID
+Logo.ImageTransparency = 1
+Logo.Parent = IntroGui
+
+local IntroTitle =
+    Instance.new("TextLabel")
+
+IntroTitle.AnchorPoint =
+    Vector2.new(0.5, 0)
+
+IntroTitle.Position =
+    UDim2.fromScale(0.5, 0.7)
+
+IntroTitle.Size =
+    UDim2.fromOffset(400, 40)
+
+IntroTitle.BackgroundTransparency = 1
+IntroTitle.Text = "DTA Hub"
+
+IntroTitle.TextColor3 =
+    Color3.fromRGB(0, 255, 255)
+
+IntroTitle.Font =
+    Enum.Font.GothamBold
+
+IntroTitle.TextScaled = true
+IntroTitle.TextTransparency = 1
+IntroTitle.Parent = IntroGui
+
+task.spawn(function()
+
+    TweenService:Create(
+        Logo,
+        TweenInfo.new(
+            1,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.Out
+        ),
+        {
+            Size =
+                UDim2.fromOffset(
+                    150,
+                    150
+                ),
+
+            ImageTransparency = 0
+        }
+    ):Play()
+
+    TweenService:Create(
+        IntroTitle,
+        TweenInfo.new(1),
+        {
+            TextTransparency = 0
+        }
+    ):Play()
+
+    task.wait(2)
+
+    local Fade =
+        TweenInfo.new(0.8)
+
+    TweenService:Create(
+        Logo,
+        Fade,
+        {
+            ImageTransparency = 1
+        }
+    ):Play()
+
+    TweenService:Create(
+        IntroTitle,
+        Fade,
+        {
+            TextTransparency = 1
+        }
+    ):Play()
+
+    local BGFade =
+        TweenService:Create(
+            BG,
+            Fade,
+            {
+                BackgroundTransparency = 1
+            }
+        )
+
+    BGFade:Play()
+    BGFade.Completed:Wait()
+
+    if IntroGui then
+        IntroGui:Destroy()
+    end
+end)
+
+local ToggleGui =
+    Instance.new("ScreenGui")
+
+ToggleGui.Name = "DTA_Toggle"
+ToggleGui.ResetOnSpawn = false
+ToggleGui.DisplayOrder =
+    DISPLAY_ZINDEX
+
+ToggleGui.Parent = TargetGui
+
+local ToggleButton =
+    Instance.new("ImageButton")
+
+ToggleButton.Name = "ToggleButton"
+
+ToggleButton.Size =
+    UDim2.fromOffset(50, 50)
+
+ToggleButton.Position =
+    UDim2.new(
+        0.02,
+        0,
+        0.2,
+        0
+    )
+
+ToggleButton.BackgroundColor3 =
+    Color3.fromRGB(25, 25, 25)
+
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Image = LOGO_ID
+ToggleButton.Parent = ToggleGui
+
+local ToggleCorner =
+    Instance.new("UICorner")
+
+ToggleCorner.CornerRadius =
+    UDim.new(1, 0)
+
+ToggleCorner.Parent =
+    ToggleButton
+
+local ToggleStroke =
+    Instance.new("UIStroke")
+
+ToggleStroke.Color =
+    Color3.fromRGB(0, 255, 255)
+
+ToggleStroke.Thickness = 2
+ToggleStroke.Transparency = 0.3
+ToggleStroke.Parent = ToggleButton
+
+local Dragging = false
+local DragStart
+local StartPos
+local HasDragged = false
+
+ToggleButton.InputBegan:Connect(function(input)
+
+    if input.UserInputType ==
+        Enum.UserInputType.MouseButton1
+        or input.UserInputType ==
+        Enum.UserInputType.Touch then
+
+        Dragging = true
+        HasDragged = false
+
+        DragStart =
+            input.Position
+
+        StartPos =
+            ToggleButton.Position
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState ==
+                Enum.UserInputState.End then
+
+                Dragging = false
+
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if Dragging
+        and (
+            input.UserInputType ==
+            Enum.UserInputType.MouseMovement
+            or
+            input.UserInputType ==
+            Enum.UserInputType.Touch
+        ) then
+
+        local Delta =
+            input.Position - DragStart
+
+        if math.abs(Delta.X) > 5
+            or math.abs(Delta.Y) > 5 then
+
+            HasDragged = true
+
+        end
+
+        ToggleButton.Position =
+            UDim2.new(
+                StartPos.X.Scale,
+                StartPos.X.Offset + Delta.X,
+                StartPos.Y.Scale,
+                StartPos.Y.Offset + Delta.Y
+            )
+    end
+end)
+
+local StatsGui =
+    Instance.new("ScreenGui")
+
+StatsGui.Name = "DTA_Stats"
+StatsGui.ResetOnSpawn = false
+StatsGui.Parent = TargetGui
+
+local StatsFrame =
+    Instance.new("Frame")
+
+StatsFrame.Size =
+    UDim2.fromOffset(220, 30)
+
+StatsFrame.Position =
+    UDim2.new(
+        1,
+        -230,
+        0,
+        10
+    )
+
+StatsFrame.BackgroundColor3 =
+    Color3.fromRGB(20, 20, 20)
+
+StatsFrame.BackgroundTransparency = 0.3
+StatsFrame.BorderSizePixel = 0
+StatsFrame.Parent = StatsGui
+
+local StatsCorner =
+    Instance.new("UICorner")
+
+StatsCorner.CornerRadius =
+    UDim.new(0, 6)
+
+StatsCorner.Parent =
+    StatsFrame
+
+local StatsLabel =
+    Instance.new("TextLabel")
+
+StatsLabel.Size =
+    UDim2.fromScale(1, 1)
+
+StatsLabel.BackgroundTransparency = 1
+
+StatsLabel.TextColor3 =
+    Color3.fromRGB(0, 255, 255)
+
+StatsLabel.Font =
+    Enum.Font.GothamMedium
+
+StatsLabel.TextSize = 12
+
+StatsLabel.Text =
+    "DTA | FPS: -- | Ping: --ms"
+
+StatsLabel.Parent =
+    StatsFrame
+
+local FrameCount = 0
+local LastUpdate = tick()
+
+RunService.RenderStepped:Connect(function()
+
+    FrameCount += 1
+
+    if tick() - LastUpdate >= 1 then
+
+        local FPS =
+            FrameCount
+
+        FrameCount = 0
+        LastUpdate = tick()
+
+        local Ping = 0
+
+        pcall(function()
+
+            Ping =
+                math.floor(
+                    Stats.Network
+                    .ServerStatsItem[
+                        "Data Ping"
+                    ]:GetValue()
+                )
+
+        end)
+
+        StatsLabel.Text =
+            string.format(
+                "DTA | FPS: %d | Ping: %dms",
+                FPS,
+                Ping
+            )
+    end
+end)
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+local FluentSuccess, Fluent =
+    pcall(function()
+
+        return loadstring(
+            game:HttpGet(
+                "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"
+            )
+        )()
+
+    end)
+
+if not FluentSuccess or not Fluent then
+
+    warn(
+        "[DTA HUD] Không thể tải Fluent UI!"
+    )
+
+    return
+end
+
+local Window =
+    Fluent:CreateWindow({
+
+        Title = "DTA V1",
+
+        SubTitle =
+            "script by dao thai an",
+
+        TabWidth = 160,
+
+        Size =
+            UDim2.fromOffset(
+                530,
+                370
+            ),
+
+        Acrylic = false,
+
+        Theme = "Dark",
+
+        MinimizeKey =
+            Enum.KeyCode.End
+    })
+
+local Tabs = {
+
+    Info =
+        Window:AddTab({
+            Title = "Thông Tin",
+            Icon = "info"
+        }),
+
+    Player =
+        Window:AddTab({
+            Title = "Nhân Vật",
+            Icon = "user"
+        }),
+
+    ESP =
+        Window:AddTab({
+            Title = "ESP",
+            Icon = "eye"
+        }),
+
+    Teleport =
+        Window:AddTab({
+            Title = "Teleport",
+            Icon = "map-pin"
+        }),
+
+    Misc =
+        Window:AddTab({
+            Title = "Khác",
+            Icon = "settings"
+        }),
+
+    Settings =
+        Window:AddTab({
+            Title = "Cài Đặt",
+            Icon = "settings"
+        })
+}
+
+ToggleButton.MouseButton1Click:Connect(function()
+
+    if not HasDragged then
+
+        local Key =
+            Window.MinimizeKey
+            or Enum.KeyCode.End
+
+        VirtualInputManager:SendKeyEvent(
+            true,
+            Key,
+            false,
+            game
+        )
+
+        VirtualInputManager:SendKeyEvent(
+            false,
+            Key,
+            false,
+            game
+        )
+    end
+end)
+
+Tabs.Info:AddButton({
+
+    Title = "Sao chép Link Youtube",
+
+    Description =
+        "Kênh Youtube: DAOTHAIAN",
+
+    Callback = function()
+
+        if setclipboard then
+            setclipboard("chưa thêm")
+        end
+
+        Fluent:Notify({
+
+            Title = "Thành công",
+
+            Content =
+                "Đã dán link vào bộ nhớ tạm!",
+
+            Duration = 3
+        })
+    end
+})
+
+Tabs.Info:AddButton({
+
+    Title = "SERVER DISCORD",
+
+    Description =
+        "https://discord.gg/kGKFfHX3vG",
+
+    Callback = function()
+
+        if setclipboard then
+            setclipboard("chưa có")
+        end
+
+        Fluent:Notify({
+
+            Title = "Thành công",
+
+            Content =
+                "Đã dán link vào bộ nhớ tạm!",
+
+            Duration = 3
+        })
+    end
+})
+
+local CurrentSpeed = 16
+local CurrentJump = 50
+
+local SpeedEnabled = false
+local JumpEnabled = false
+local NoclipEnabled = false
+local InfiniteJump = false
+
+RunService.RenderStepped:Connect(function()
+
+    local Character =
+        LocalPlayer.Character
+
+    if not Character then
+        return
+    end
+
+    local Humanoid =
+        Character:FindFirstChildOfClass(
+            "Humanoid"
+        )
+
+    if Humanoid then
+
+        if SpeedEnabled then
+            Humanoid.WalkSpeed =
+                CurrentSpeed
+        end
+
+        if JumpEnabled then
+
+            Humanoid.UseJumpPower = true
+
+            Humanoid.JumpPower =
+                CurrentJump
+        end
+    end
+
+    if NoclipEnabled then
+
+        for _, part in pairs(
+            Character:GetDescendants()
+        ) do
+
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+
+    if InfiniteJump
+        and LocalPlayer.Character then
+
+        local Humanoid =
+            LocalPlayer.Character:
+            FindFirstChildOfClass(
+                "Humanoid"
+            )
+
+        if Humanoid then
+
+            Humanoid:ChangeState(
+                Enum.HumanoidStateType.Jumping
+            )
+        end
+    end
+end)
+
+Tabs.Player:AddSlider(
+    "WalkSpeed",
+    {
+
+        Title =
+            "Tốc Độ Di Chuyển (Speed)",
+
+        Default = 16,
+
+        Min = 16,
+
+        Max = 300,
+
+        Rounding = 0,
+
+        Callback = function(Value)
+
+            CurrentSpeed = Value
+
+            SpeedEnabled =
+                Value > 16
+        end
+    }
+)
+
+Tabs.Player:AddSlider(
+    "JumpPower",
+    {
+
+        Title =
+            "Độ Cao Nhảy (Jump)",
+
+        Default = 50,
+
+        Min = 50,
+
+        Max = 400,
+
+        Rounding = 0,
+
+        Callback = function(Value)
+
+            CurrentJump = Value
+
+            JumpEnabled =
+                Value > 50
+        end
+    }
+)
+
+Tabs.Player:AddToggle(
+    "Noclip_Toggle",
+    {
+
+        Title =
+            "Noclip (Đi Xuyên Tường)",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            NoclipEnabled = Value
+
+        end
+    }
+)
+
+Tabs.Player:AddToggle(
+    "InfJump_Toggle",
+    {
+
+        Title =
+            "Infinite Jump (Nhảy Vô Hạn)",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            InfiniteJump = Value
+
+        end
+    }
+)
+
+local HighlightESPEnabled = false
+local ESPConnections = {}
+
+local function RemoveHighlight(plr)
+
+    if plr.Character then
+
+        local Old =
+            plr.Character:FindFirstChild(
+                "DTA_ESP"
+            )
+
+        if Old then
+            Old:Destroy()
+        end
+    end
+end
+
+local function ApplyHighlight(plr)
+
+    if plr == LocalPlayer then
+        return
+    end
+
+    local function Setup(Character)
+
+        if not Character then
+            return
+        end
+
+        RemoveHighlight(plr)
+
+        if HighlightESPEnabled then
+
+            local Highlight =
+                Instance.new("Highlight")
+
+            Highlight.Name =
+                "DTA_ESP"
+
+            Highlight.FillColor =
+                Color3.fromRGB(
+                    0,
+                    255,
+                    255
+                )
+
+            Highlight.OutlineColor =
+                Color3.fromRGB(
+                    255,
+                    255,
+                    255
+                )
+
+            Highlight.FillTransparency = 0.5
+            Highlight.OutlineTransparency = 0
+
+            Highlight.DepthMode =
+                Enum.HighlightDepthMode.AlwaysOnTop
+
+            Highlight.Adornee =
+                Character
+
+            Highlight.Parent =
+                Character
+        end
+    end
+
+    if plr.Character then
+        Setup(plr.Character)
+    end
+
+    if not ESPConnections[plr] then
+
+        ESPConnections[plr] =
+            plr.CharacterAdded:Connect(
+                function(Character)
+
+                    task.wait(0.5)
+
+                    Setup(Character)
+
+                end
+            )
+    end
+end
+
+local function UpdateAllHighlight()
+
+    for _, plr in ipairs(
+        Players:GetPlayers()
+    ) do
+
+        if plr ~= LocalPlayer then
+
+            if HighlightESPEnabled then
+
+                ApplyHighlight(plr)
+
+            else
+
+                RemoveHighlight(plr)
+
+            end
+        end
+    end
+end
+
+Tabs.ESP:AddToggle(
+    "ESP_Toggle",
+    {
+
+        Title =
+            "Bật ESP Người Chơi (Highlight)",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            HighlightESPEnabled = Value
+
+            UpdateAllHighlight()
+
+        end
+    }
+)
+
+Players.PlayerAdded:Connect(function(plr)
+
+    if HighlightESPEnabled then
+        ApplyHighlight(plr)
+    end
+
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+
+    if ESPConnections[plr] then
+
+        ESPConnections[plr]:Disconnect()
+
+        ESPConnections[plr] = nil
+    end
+
+end)
+
+local SelectedPlayer = nil
+
+local function GetPlayerList()
+
+    local Names = {}
+
+    for _, plr in ipairs(
+        Players:GetPlayers()
+    ) do
+
+        if plr ~= LocalPlayer then
+
+            table.insert(
+                Names,
+                plr.DisplayName
+                    .. " (@"
+                    .. plr.Name
+                    .. ")"
+            )
+        end
+    end
+
+    return Names
+end
+
+local PlayerDropdown =
+    Tabs.Teleport:AddDropdown(
+        "PlayerTPDropdown",
+        {
+
+            Title =
+                "Chọn Người Chơi",
+
+            Values =
+                GetPlayerList(),
+
+            Multi = false,
+
+            Default = nil,
+
+            Callback = function(Value)
+
+                SelectedPlayer = nil
+
+                for _, plr in ipairs(
+                    Players:GetPlayers()
+                ) do
+
+                    local Name =
+                        plr.DisplayName
+                        .. " (@"
+                        .. plr.Name
+                        .. ")"
+
+                    if Name == Value then
+
+                        SelectedPlayer =
+                            plr
+
+                        break
+                    end
+                end
+            end
+        }
+    )
+
+Tabs.Teleport:AddButton({
+
+    Title =
+        "Làm Mới Danh Sách",
+
+    Callback = function()
+
+        PlayerDropdown:SetValues(
+            GetPlayerList()
+        )
+
+    end
+})
+
+Tabs.Teleport:AddButton({
+
+    Title =
+        "Dịch Chuyển Đến Người Chơi",
+
+    Callback = function()
+
+        if SelectedPlayer
+            and SelectedPlayer.Character
+            and SelectedPlayer.Character:
+                FindFirstChild(
+                    "HumanoidRootPart"
+                )
+            and LocalPlayer.Character
+            and LocalPlayer.Character:
+                FindFirstChild(
+                    "HumanoidRootPart"
+                ) then
+
+            LocalPlayer.Character
+                .HumanoidRootPart.CFrame =
+
+                SelectedPlayer.Character
+                .HumanoidRootPart.CFrame
+                * CFrame.new(
+                    0,
+                    0,
+                    3
+                )
+
+            Fluent:Notify({
+
+                Title =
+                    "Dịch Chuyển",
+
+                Content =
+                    "Đã tới vị trí của "
+                    .. SelectedPlayer.DisplayName,
+
+                Duration = 3
+            })
+
+        else
+
+            Fluent:Notify({
+
+                Title = "Lỗi",
+
+                Content =
+                    "Không tìm thấy vị trí người chơi!",
+
+                Duration = 3
+            })
+        end
+    end
+})
+
+local FullbrightEnabled = false
+
+local OldBrightness =
+    Lighting.Brightness
+
+local OldClockTime =
+    Lighting.ClockTime
+
+local OldGlobalShadows =
+    Lighting.GlobalShadows
+
+Tabs.Misc:AddToggle(
+    "Fullbright_Toggle",
+    {
+
+        Title =
+            "Fullbright (Sáng Màn Hình)",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            FullbrightEnabled = Value
+
+            if Value then
+
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.GlobalShadows = false
+
+            else
+
+                Lighting.Brightness =
+                    OldBrightness
+
+                Lighting.ClockTime =
+                    OldClockTime
+
+                Lighting.GlobalShadows =
+                    OldGlobalShadows
+            end
+        end
+    }
+)
+
+Lighting.Changed:Connect(function()
+
+    if FullbrightEnabled then
+
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.GlobalShadows = false
+
+    end
+end)
+
+local AntiAFKConnection = nil
+
+Tabs.Misc:AddToggle(
+    "AntiAFK_Toggle",
+    {
+
+        Title =
+            "Anti-AFK (Chống Văng Game)",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            if Value then
+
+                local VirtualUser =
+                    game:GetService(
+                        "VirtualUser"
+                    )
+
+                AntiAFKConnection =
+                    LocalPlayer.Idled:Connect(
+                        function()
+
+                            VirtualUser:
+                                Button2Down(
+                                    Vector2.new(
+                                        0,
+                                        0
+                                    ),
+                                    Camera.CFrame
+                                )
+
+                            task.wait(1)
+
+                            VirtualUser:
+                                Button2Up(
+                                    Vector2.new(
+                                        0,
+                                        0
+                                    ),
+                                    Camera.CFrame
+                                )
+
+                        end
+                    )
+
+                Fluent:Notify({
+
+                    Title = "Anti-AFK",
+
+                    Content =
+                        "Đã bật chống AFK!",
+
+                    Duration = 3
+                })
+
+            else
+
+                if AntiAFKConnection then
+
+                    AntiAFKConnection:
+                        Disconnect()
+
+                    AntiAFKConnection =
+                        nil
+                end
+
+                Fluent:Notify({
+
+                    Title = "Anti-AFK",
+
+                    Content =
+                        "Đã tắt chống AFK!",
+
+                    Duration = 3
+                })
+            end
+        end
+    }
+)
+
+local AutoRejoin = false
+
+Tabs.Misc:AddToggle(
+    "AutoRejoin_Toggle",
+    {
+
+        Title =
+            "Auto Rejoin Khi Mất Kết Nối",
+
+        Default = false,
+
+        Callback = function(Value)
+
+            AutoRejoin = Value
+
+        end
+    }
+)
+
+GuiService.ErrorMessageChanged:Connect(
+    function()
+
+        if AutoRejoin then
+
+            task.wait(2)
+
+            TeleportService:
+                Teleport(
+                    game.PlaceId,
+                    LocalPlayer
+                )
+        end
+    end
+)
+
+Tabs.Misc:AddButton({
+
+    Title =
+        "Super Fix Lag & Boost FPS",
+
+    Callback = function()
+
+        for _, item in pairs(
+            Lighting:GetChildren()
+        ) do
+
+            if item:IsA("PostEffect")
+                or item:IsA("Atmosphere")
+                or item:IsA("Clouds") then
+
+                item:Destroy()
+
+            end
+        end
+
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+
+        for _, object in pairs(
+            workspace:GetDescendants()
+        ) do
+
+            if object:IsA("BasePart") then
+
+                object.Material =
+                    Enum.Material.SmoothPlastic
+
+                object.CastShadow = false
+                object.Reflectance = 0
+
+            elseif object:IsA("Decal")
+                or object:IsA("Texture") then
+
+                object.Transparency = 1
+
+            elseif object:IsA("ParticleEmitter")
+                or object:IsA("Trail")
+                or object:IsA("Smoke")
+                or object:IsA("Fire") then
+
+                object.Enabled = false
+
+            end
+        end
+
+        for _, item in pairs(
+            Lighting:GetChildren()
+        ) do
+
+            if item:IsA("Sky") then
+                item:Destroy()
+            end
+        end
+
+        local NewSky =
+            Instance.new("Sky")
+
+        local TextureURI =
+            "rbxassetid://97528657105942"
+
+        NewSky.SkyboxBk = TextureURI
+        NewSky.SkyboxDn = TextureURI
+        NewSky.SkyboxFt = TextureURI
+        NewSky.SkyboxLf = TextureURI
+        NewSky.SkyboxRt = TextureURI
+        NewSky.SkyboxUp = TextureURI
+
+        NewSky.Parent =
+            Lighting
+
+        Fluent:Notify({
+
+            Title =
+                "Fix Lag",
+
+            Content =
+                "Đã tối ưu đồ họa & Boost FPS!",
+
+            Duration = 3
+        })
+    end
+})
+
+Tabs.Misc:AddButton({
+
+    Title =
+        "Vào Lại Server (Rejoin Game)",
+
+    Callback = function()
+
+        TeleportService:
+            Teleport(
+                game.PlaceId,
+                LocalPlayer
+            )
+
+    end
+})
+
+Tabs.Misc:AddButton({
+
+    Title =
+        "Đổi Server Khác (Server Hop)",
+
+    Callback = function()
+
+        pcall(function()
+
+            loadstring(
+                game:HttpGet(
+                    "https://raw.githubusercontent.com/LeoK39/ServerHop/main/Script.lua"
+                )
+            )()
+
+        end)
+    end
+})
+
+pcall(function()
+
+    local SaveManager =
+        loadstring(
+            game:HttpGet(
+                "https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"
+            )
+        )()
+
+    SaveManager:SetLibrary(Fluent)
+
+    SaveManager:SetFolder(
+        "ANDZConfig"
+    )
+
+    SaveManager:BuildConfigFolder()
+
+    SaveManager:BuildFolderSection(
+        Tabs.Settings
+    )
+
+end)
+
+Window:SelectTab(
+    Tabs.Info
+)
+
+Fluent:Notify({
+
+    Title = "DTA",
+
+    Content =
+        "Đã khởi chạy thành công!",
+
+    Duration = 3
+})
